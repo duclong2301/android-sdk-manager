@@ -13,6 +13,7 @@ The app provides a local web interface for downloading Google's Android command-
 - Accept SDK licenses through `sdkmanager`.
 - Refresh and display installed packages.
 - Generate platform-specific `ANDROID_SDK_ROOT`, `ANDROID_HOME`, and `PATH` setup commands.
+- Copy install logs from the UI for debugging or issue reports.
 - Runs locally in a browser with no external Python dependencies.
 
 ## Requirements
@@ -71,5 +72,7 @@ For a typical Android development setup, install:
 This project wraps Google's official Android SDK command-line tooling. Package installation, uninstallation, and license acceptance are handled by `sdkmanager`.
 
 If package installation fails because Java is missing, install a JDK first and restart the app.
+
+If installation fails with a permission error, choose a writable SDK folder with `Browse...` or fix permissions on the selected SDK directory. The app also repairs executable permissions on downloaded command-line tool binaries before running `sdkmanager`.
 
 Runtime cache files such as `config.json`, `catalog-cache.json`, and `installed-cache.json` are intentionally ignored by Git.

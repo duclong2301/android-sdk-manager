@@ -40,6 +40,22 @@ function setBadge(el, text, tone) {
   el.className = `badge ${tone}`;
 }
 
+async function copyText(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return;
+  }
+  const textarea = document.createElement("textarea");
+  textarea.value = text;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand("copy");
+  textarea.remove();
+}
+
 function installedSet() {
   const packages = model.status?.installed?.packages || [];
   return new Set(packages);
@@ -152,7 +168,7 @@ function renderState(state) {
   $("logOutput").scrollTop = $("logOutput").scrollHeight;
 
   document.querySelectorAll("button").forEach((button) => {
-    if (button.id === "refreshStatus") return;
+    if (["refreshStatus", "copyEnv", "copyLog"].includes(button.id)) return;
     button.disabled = busy;
   });
 
@@ -225,7 +241,16 @@ function wireEvents() {
   $("openFolder").addEventListener("click", () => api("/api/open-sdk-folder", { method: "POST" }).catch(alert));
   $("refreshCatalog").addEventListener("click", () => loadCatalog(true));
   $("copyEnv").addEventListener("click", async () => {
-    await navigator.clipboard.writeText($("envBlock").textContent);
+    await copyText($("envBlock").textContent);
+  });
+  $("copyLog").addEventListener("click", async () => {
+    const button = $("copyLog");
+    await copyText($("logOutput").textContent);
+    const previous = button.textContent;
+    button.textContent = "Copied";
+    setTimeout(() => {
+      button.textContent = previous;
+    }, 1200);
   });
 
   $("search").addEventListener("input", (event) => {

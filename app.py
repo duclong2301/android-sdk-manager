@@ -6,6 +6,7 @@ import platform
 import re
 import shutil
 import shlex
+import stat
 import subprocess
 import sys
 import tempfile
@@ -163,6 +164,43 @@ def find_sdkmanager(sdk_root):
         if candidate.exists():
             return str(candidate)
     return None
+
+
+def ensure_executable(path):
+    if platform.system().lower() == "windows":
+        return
+    target = Path(path)
+    if not target.exists():
+        return
+    mode = target.stat().st_mode
+    target.chmod(mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
+
+
+def ensure_tool_binaries_executable(sdk_root):
+    if platform.system().lower() == "windows":
+        return
+    tools_root = Path(sdk_root).expanduser() / "cmdline-tools"
+    if not tools_root.exists():
+        return
+    for bin_dir in tools_root.glob("*/bin"):
+        if not bin_dir.is_dir():
+            continue
+        for item in bin_dir.iterdir():
+            if item.is_file():
+                ensure_executable(item)
+
+
+def ensure_sdk_root_writable(sdk_root):
+    root = Path(sdk_root).expanduser()
+    try:
+        root.mkdir(parents=True, exist_ok=True)
+        probe = root / ".android-sdk-manager-write-test"
+        probe.write_text("ok", encoding="utf-8")
+        probe.unlink()
+    except PermissionError:
+        raise RuntimeError("Permission denied writing to SDK folder: %s. Choose a writable folder or fix folder permissions." % root)
+    except OSError as exc:
+        raise RuntimeError("Cannot write to SDK folder %s: %s" % (root, exc))
 
 
 def check_java():
@@ -386,7 +424,7 @@ def download_file(url, dest):
 def install_commandline_tools():
     config = load_config()
     sdk_root = Path(config["sdkRoot"]).expanduser()
-    sdk_root.mkdir(parents=True, exist_ok=True)
+    ensure_sdk_root_writable(sdk_root)
     url = cmdline_tools_url()
     log("Download source: %s" % url)
     with tempfile.TemporaryDirectory() as tmp:
@@ -409,6 +447,7 @@ def install_commandline_tools():
         if target.exists():
             shutil.rmtree(target)
         shutil.move(str(source), str(target))
+    ensure_tool_binaries_executable(sdk_root)
     log("Command-line tools installed at: %s" % target)
 
 
@@ -421,19 +460,25 @@ def sdk_env(sdk_root):
 
 def run_sdkmanager(args, input_text=None):
     sdk_root = load_config()["sdkRoot"]
+    ensure_sdk_root_writable(sdk_root)
+    ensure_tool_binaries_executable(sdk_root)
     manager = find_sdkmanager(sdk_root)
     if not manager:
         raise RuntimeError("sdkmanager is not installed yet. Install command-line tools first.")
+    ensure_executable(manager)
     command = [manager, "--sdk_root=%s" % str(Path(sdk_root).expanduser())] + args
     log("$ " + " ".join(shlex.quote(str(x)) for x in command))
-    proc = subprocess.Popen(
-        command,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        stdin=subprocess.PIPE if input_text is not None else None,
-        text=True,
-        env=sdk_env(sdk_root),
-    )
+    try:
+        proc = subprocess.Popen(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            stdin=subprocess.PIPE if input_text is not None else None,
+            text=True,
+            env=sdk_env(sdk_root),
+        )
+    except PermissionError:
+        raise RuntimeError("Permission denied while starting sdkmanager. The app tried to mark it executable; reinstall command-line tools if this continues.")
     if input_text is not None:
         output, _ = proc.communicate(input=input_text)
         for line in (output or "").splitlines():

@@ -118,6 +118,12 @@ button:disabled {
   margin-bottom: 14px;
 }
 
+.panel-title-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .panel-title h2 {
   margin: 0;
   font-size: 17px;
@@ -289,6 +295,7 @@ select:focus {
   height: 260px;
   padding: 12px;
   font-size: 13px;
+  user-select: text;
 }
 
 .selected-panel {
