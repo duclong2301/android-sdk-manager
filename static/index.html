@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Android SDK Manager</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>Android SDK Manager</h1>
+          <p>Install and manage Android SDK packages without installing Android Studio.</p>
+        </div>
+        <div class="top-actions">
+          <button id="refreshStatus" class="icon-button" title="Refresh status">↻</button>
+          <button id="openFolder" class="button secondary">Open SDK folder</button>
+        </div>
+      </header>
+
+      <section class="setup-grid">
+        <div class="panel setup-panel">
+          <div class="panel-title">
+            <h2>Setup</h2>
+            <span id="overallBadge" class="badge neutral">Checking</span>
+          </div>
+          <label class="field-label" for="sdkRoot">SDK folder</label>
+          <div class="path-row">
+            <input id="sdkRoot" type="text" spellcheck="false" />
+            <button id="saveSdkRoot" class="button">Save</button>
+          </div>
+          <div class="status-list">
+            <div class="status-row">
+              <span>Java/JDK</span>
+              <strong id="javaStatus">Checking</strong>
+            </div>
+            <div class="status-row">
+              <span>Command-line tools</span>
+              <strong id="toolsStatus">Checking</strong>
+            </div>
+            <div class="status-row">
+              <span>SDK folder</span>
+              <strong id="folderStatus">Checking</strong>
+            </div>
+          </div>
+          <div class="button-row">
+            <button id="installTools" class="button primary">Install command-line tools</button>
+            <button id="acceptLicenses" class="button secondary">Accept licenses</button>
+            <button id="listInstalled" class="button secondary">Refresh installed</button>
+          </div>
+        </div>
+
+        <div class="panel env-panel">
+          <div class="panel-title">
+            <h2>Environment</h2>
+            <button id="copyEnv" class="icon-button" title="Copy">⧉</button>
+          </div>
+          <pre id="envBlock"></pre>
+        </div>
+      </section>
+
+      <section class="workspace">
+        <aside class="panel selected-panel">
+          <div class="panel-title">
+            <h2>Selected</h2>
+            <span id="selectedCount" class="badge neutral">0</span>
+          </div>
+          <div id="selectedList" class="selected-list empty">No packages selected.</div>
+          <label class="check-row">
+            <input id="autoLicenses" type="checkbox" checked />
+            <span>Accept licenses before installing</span>
+          </label>
+          <div class="stack-actions">
+            <button id="installSelected" class="button primary full">Install packages</button>
+            <button id="uninstallSelected" class="button danger full">Uninstall packages</button>
+          </div>
+        </aside>
+
+        <section class="panel packages-panel">
+          <div class="panel-title package-title">
+            <div>
+              <h2>Packages</h2>
+              <p id="catalogMeta">Load the SDK catalog to browse available packages.</p>
+            </div>
+            <button id="refreshCatalog" class="button secondary">Load catalog</button>
+          </div>
+
+          <div class="filters">
+            <div class="search-wrap">
+              <span>⌕</span>
+              <input id="search" type="search" placeholder="Search platform-tools, android-35, build-tools..." />
+            </div>
+            <select id="typeFilter" title="Filter package type">
+              <option value="recommended">Recommended</option>
+              <option value="all">All packages</option>
+              <option value="Tools">Tools</option>
+              <option value="Platforms">Platforms</option>
+              <option value="Build Tools">Build Tools</option>
+              <option value="System Images">System Images</option>
+              <option value="NDK">NDK</option>
+              <option value="Extras">Extras</option>
+            </select>
+          </div>
+
+          <div id="packageList" class="package-list">
+            <div class="empty-state">No catalog loaded yet. Click “Load catalog”.</div>
+          </div>
+        </section>
+      </section>
+
+      <section class="panel log-panel">
+        <div class="panel-title">
+          <h2>Log</h2>
+          <span id="jobBadge" class="badge neutral">Idle</span>
+        </div>
+        <pre id="logOutput">Ready.</pre>
+      </section>
+    </main>
+    <script src="/static/app.js"></script>
+  </body>
+</html>
