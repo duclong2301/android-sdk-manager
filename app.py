@@ -114,6 +114,28 @@ def save_config(config):
     return clean
 
 
+def select_directory(initial_dir=None):
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+    except Exception as exc:
+        raise RuntimeError("Folder picker is not available because tkinter could not be loaded: %s" % exc)
+
+    root = tk.Tk()
+    root.withdraw()
+    root.update()
+    try:
+        selected = filedialog.askdirectory(
+            parent=root,
+            title="Choose Android SDK folder",
+            initialdir=str(Path(initial_dir or default_sdk_root()).expanduser()),
+            mustexist=False,
+        )
+    finally:
+        root.destroy()
+    return selected
+
+
 def host_os():
     system = platform.system().lower()
     if system == "darwin":
@@ -551,6 +573,13 @@ class Handler(SimpleHTTPRequestHandler):
                 if not sdk_root:
                     return self.send_json({"error": "Missing sdkRoot"}, status=400)
                 return self.send_json(save_config({"sdkRoot": sdk_root}))
+            if path == "/api/select-sdk-folder":
+                current_root = body.get("sdkRoot") or load_config()["sdkRoot"]
+                selected = select_directory(current_root)
+                if not selected:
+                    return self.send_json({"selected": False, "config": load_config()})
+                config = save_config({"sdkRoot": selected})
+                return self.send_json({"selected": True, "config": config})
             if path == "/api/install-tools":
                 return self.send_json({"started": run_async("Install command-line tools", install_commandline_tools)})
             if path == "/api/refresh-catalog":

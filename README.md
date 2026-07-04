@@ -7,6 +7,7 @@ The app provides a local web interface for downloading Google's Android command-
 ## Features
 
 - Install Android command-line tools directly from Google's SDK repository.
+- Choose the Android SDK folder with a native folder picker or by typing a path.
 - Browse the Android SDK catalog with package type filtering and search.
 - Install common packages such as `platform-tools`, `cmdline-tools;latest`, `platforms;android-*`, `build-tools;*`, and `emulator`.
 - Accept SDK licenses through `sdkmanager`.
@@ -50,7 +51,7 @@ http://127.0.0.1:8765/
 
 ## Recommended Workflow
 
-1. Choose an SDK folder or keep the default path.
+1. Choose an SDK folder with `Browse...`, type a path manually, or keep the default path.
 2. Click `Install command-line tools`.
 3. Click `Load catalog`.
 4. Select the packages you need.

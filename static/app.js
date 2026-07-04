@@ -209,6 +209,16 @@ function wireEvents() {
     await api("/api/config", { method: "POST", body: { sdkRoot: $("sdkRoot").value.trim() } });
     await refreshStatus();
   });
+  $("browseSdkRoot").addEventListener("click", async () => {
+    const result = await api("/api/select-sdk-folder", {
+      method: "POST",
+      body: { sdkRoot: $("sdkRoot").value.trim() },
+    });
+    if (result.selected) {
+      $("sdkRoot").value = result.config.sdkRoot;
+      await refreshStatus();
+    }
+  });
   $("installTools").addEventListener("click", () => startJob("/api/install-tools").catch(alert));
   $("acceptLicenses").addEventListener("click", () => startJob("/api/accept-licenses").catch(alert));
   $("listInstalled").addEventListener("click", () => startJob("/api/list-installed").catch(alert));
