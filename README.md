@@ -71,6 +71,8 @@ For a typical Android development setup, install:
 
 This project wraps Google's official Android SDK command-line tooling. Package installation, uninstallation, and license acceptance are handled by `sdkmanager`.
 
+On macOS, `Browse...` uses the system folder picker through AppleScript so it can be opened safely from the local web app.
+
 If package installation fails because Java is missing, install a JDK first and restart the app.
 
 If installation fails with a permission error, choose a writable SDK folder with `Browse...` or fix permissions on the selected SDK directory. The app also repairs executable permissions on downloaded command-line tool binaries before running `sdkmanager`.

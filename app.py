@@ -116,6 +116,35 @@ def save_config(config):
 
 
 def select_directory(initial_dir=None):
+    if platform.system().lower() == "darwin":
+        initial_path = Path(initial_dir or default_sdk_root()).expanduser()
+        default_path = initial_path if initial_path.exists() else initial_path.parent
+        while not default_path.exists() and default_path != default_path.parent:
+            default_path = default_path.parent
+        escaped_path = str(default_path).replace("\\", "\\\\").replace('"', '\\"')
+        script = '''
+            set defaultFolder to POSIX file "%s"
+            try
+                set selectedFolder to choose folder with prompt "Choose Android SDK folder" default location defaultFolder
+                return POSIX path of selectedFolder
+            on error number -128
+                return ""
+            end try
+        ''' % escaped_path
+        try:
+            proc = subprocess.run(
+                ["osascript", "-e", script],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                timeout=300,
+            )
+        except subprocess.TimeoutExpired:
+            raise RuntimeError("Folder picker timed out.")
+        if proc.returncode != 0:
+            raise RuntimeError("Folder picker failed: %s" % (proc.stderr or proc.stdout).strip())
+        return (proc.stdout or "").strip()
+
     try:
         import tkinter as tk
         from tkinter import filedialog
