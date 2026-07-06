@@ -6,6 +6,7 @@ const model = {
   selected: new Set(),
   search: "",
   type: "recommended",
+  activeTab: "available",
   lastBusy: false,
 };
 
@@ -61,6 +62,62 @@ function installedSet() {
   return new Set(packages);
 }
 
+function versionParts(value) {
+  const parts = String(value || "").match(/\d+/g);
+  return parts ? parts.map(Number) : [0];
+}
+
+function compareVersionsDesc(a, b) {
+  const left = versionParts(a);
+  const right = versionParts(b);
+  const length = Math.max(left.length, right.length);
+  for (let index = 0; index < length; index += 1) {
+    const diff = (right[index] || 0) - (left[index] || 0);
+    if (diff) return diff;
+  }
+  return 0;
+}
+
+function packageType(path) {
+  if (path === "platform-tools" || path === "emulator" || path.startsWith("cmdline-tools")) return "Tools";
+  if (path.startsWith("platforms;")) return "Platforms";
+  if (path.startsWith("build-tools;")) return "Build Tools";
+  if (path.startsWith("system-images;")) return "System Images";
+  if (path.startsWith("ndk;")) return "NDK";
+  if (path.startsWith("extras;")) return "Extras";
+  return "Other";
+}
+
+function packageName(path) {
+  const android = path.match(/^platforms;android-(.+)$/);
+  if (android) return `Android SDK Platform ${android[1]}`;
+  const buildTools = path.match(/^build-tools;(.+)$/);
+  if (buildTools) return `Android SDK Build-Tools ${buildTools[1]}`;
+  if (path === "platform-tools") return "Android SDK Platform-Tools";
+  if (path === "emulator") return "Android Emulator";
+  if (path.startsWith("cmdline-tools")) return "Android SDK Command-line Tools";
+  return path;
+}
+
+function packageSort(a, b) {
+  const ranks = {
+    Tools: 0,
+    Platforms: 1,
+    "Build Tools": 2,
+    "System Images": 3,
+    NDK: 4,
+    Extras: 5,
+    Other: 6,
+  };
+  const typeDiff = (ranks[a.type] ?? 9) - (ranks[b.type] ?? 9);
+  if (typeDiff) return typeDiff;
+  return compareVersionsDesc(a.path, b.path) || a.path.localeCompare(b.path);
+}
+
+function catalogMap() {
+  return new Map((model.catalog?.packages || []).map((pkg) => [pkg.path, pkg]));
+}
+
 function renderStatus() {
   const status = model.status;
   if (!status) return;
@@ -105,20 +162,28 @@ function renderSelected() {
 function packageMatches(pkg) {
   const query = model.search.trim().toLowerCase();
   const recommended = new Set(model.catalog?.recommended || []);
-  if (model.type === "recommended" && !recommended.has(pkg.path)) return false;
+  if (model.activeTab === "available" && model.type === "recommended" && !recommended.has(pkg.path)) return false;
   if (model.type !== "recommended" && model.type !== "all" && pkg.type !== model.type) return false;
   if (!query) return true;
   return `${pkg.path} ${pkg.name} ${pkg.revision} ${pkg.type}`.toLowerCase().includes(query);
 }
 
 function renderPackages() {
+  document.querySelectorAll(".tab-button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.tab === model.activeTab);
+  });
+  if (model.activeTab === "installed") {
+    renderInstalledPackages();
+    return;
+  }
+
   const list = $("packageList");
   if (!model.catalog) {
     list.innerHTML = `<div class="empty-state">No catalog loaded yet. Click “Load catalog”.</div>`;
     return;
   }
   const installed = installedSet();
-  const rows = model.catalog.packages.filter(packageMatches).slice(0, 350);
+  const rows = model.catalog.packages.slice().sort(packageSort).filter(packageMatches).slice(0, 350);
   $("catalogMeta").textContent = `${model.catalog.packages.length} packages, updated ${fmtDate(model.catalog.fetchedAt)}.`;
   if (!rows.length) {
     list.innerHTML = `<div class="empty-state">No matching packages found.</div>`;
@@ -141,6 +206,55 @@ function renderPackages() {
             <span class="pill">${escapeHtml(pkg.type)}</span>
             ${pkg.revision ? `<span class="pill">rev ${escapeHtml(pkg.revision)}</span>` : ""}
             ${size ? `<span class="pill">${size}</span>` : ""}
+          </span>
+        </label>
+      `;
+    })
+    .join("");
+}
+
+function renderInstalledPackages() {
+  const list = $("packageList");
+  const installed = [...installedSet()];
+  const updatedAt = model.status?.installed?.updatedAt;
+  $("catalogMeta").textContent = `${installed.length} installed packages, updated ${fmtDate(updatedAt)}.`;
+  if (!installed.length) {
+    list.innerHTML = `<div class="empty-state">No installed packages loaded yet. Click “Refresh installed”.</div>`;
+    return;
+  }
+  const byPath = catalogMap();
+  const rows = installed
+    .map((path) => {
+      const fromCatalog = byPath.get(path);
+      return fromCatalog || {
+        path,
+        name: packageName(path),
+        type: packageType(path),
+        revision: "",
+        size: null,
+      };
+    })
+    .sort(packageSort)
+    .filter(packageMatches)
+    .slice(0, 350);
+  if (!rows.length) {
+    list.innerHTML = `<div class="empty-state">No matching installed packages found.</div>`;
+    return;
+  }
+  list.innerHTML = rows
+    .map((pkg) => {
+      const checked = model.selected.has(pkg.path) ? "checked" : "";
+      return `
+        <label class="package-row">
+          <input type="checkbox" data-package="${escapeHtml(pkg.path)}" ${checked} />
+          <span class="package-main">
+            <strong>${escapeHtml(pkg.name)}</strong>
+            <code>${escapeHtml(pkg.path)}</code>
+          </span>
+          <span class="package-meta">
+            <span class="pill installed">Installed</span>
+            <span class="pill">${escapeHtml(pkg.type)}</span>
+            ${pkg.revision ? `<span class="pill">rev ${escapeHtml(pkg.revision)}</span>` : ""}
           </span>
         </label>
       `;
@@ -260,6 +374,12 @@ function wireEvents() {
   $("typeFilter").addEventListener("change", (event) => {
     model.type = event.target.value;
     renderPackages();
+  });
+  document.querySelectorAll(".tab-button").forEach((button) => {
+    button.addEventListener("click", () => {
+      model.activeTab = button.dataset.tab;
+      renderPackages();
+    });
   });
   $("packageList").addEventListener("change", (event) => {
     const path = event.target?.dataset?.package;

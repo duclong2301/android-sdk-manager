@@ -361,6 +361,33 @@ select:focus {
   align-items: flex-start;
 }
 
+.tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--line);
+  margin: -2px 0 12px;
+}
+
+.tab-button {
+  min-height: 38px;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 800;
+  padding: 0 12px;
+}
+
+.tab-button:hover {
+  color: var(--text);
+  background: #f8fafc;
+}
+
+.tab-button.active {
+  color: var(--blue);
+  border-bottom-color: var(--blue);
+}
+
 .filters {
   margin-bottom: 12px;
 }
@@ -495,6 +522,14 @@ select {
   .button-row button,
   .filters select {
     width: 100%;
+  }
+
+  .tabs {
+    overflow-x: auto;
+  }
+
+  .tab-button {
+    flex: 1 0 auto;
   }
 
   .package-row {

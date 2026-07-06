@@ -9,9 +9,11 @@ The app provides a local web interface for downloading Google's Android command-
 - Install Android command-line tools directly from Google's SDK repository.
 - Choose the Android SDK folder with a native folder picker or by typing a path.
 - Browse the Android SDK catalog with package type filtering and search.
+- Switch between available and installed package tabs.
 - Install common packages such as `platform-tools`, `cmdline-tools;latest`, `platforms;android-*`, `build-tools;*`, and `emulator`.
 - Accept SDK licenses through `sdkmanager`.
 - Refresh and display installed packages.
+- See newer package versions first in each package category.
 - Generate platform-specific `ANDROID_SDK_ROOT`, `ANDROID_HOME`, and `PATH` setup commands.
 - Copy install logs from the UI for debugging or issue reports.
 - Runs locally in a browser with no external Python dependencies.
@@ -57,7 +59,8 @@ http://127.0.0.1:8765/
 3. Click `Load catalog`.
 4. Select the packages you need.
 5. Click `Install packages`.
-6. Copy the environment variable commands shown in the `Environment` panel.
+6. Use the `Installed packages` tab and `Refresh installed` to review installed SDK packages.
+7. Copy the environment variable commands shown in the `Environment` panel.
 
 For a typical Android development setup, install:
 

@@ -368,6 +368,19 @@ def version_tuple(text):
     return tuple(nums or [0])
 
 
+def package_sort_key(package):
+    type_rank = {
+        "Tools": 0,
+        "Platforms": 1,
+        "Build Tools": 2,
+        "System Images": 3,
+        "NDK": 4,
+        "Extras": 5,
+        "Other": 6,
+    }.get(package["type"], 9)
+    return (type_rank, tuple(-part for part in version_tuple(package["path"])), package["path"])
+
+
 def fetch_catalog(force=False):
     if not force and CATALOG_CACHE.exists():
         cached = read_json(CATALOG_CACHE, None)
@@ -415,7 +428,7 @@ def fetch_catalog(force=False):
     payload = {
         "fetchedAt": time.time(),
         "hostOs": target_host,
-        "packages": sorted(packages, key=lambda p: (p["type"], p["path"])),
+        "packages": sorted(packages, key=package_sort_key),
         "recommended": recommended,
     }
     write_json(CATALOG_CACHE, payload)
